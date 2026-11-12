@@ -448,7 +448,11 @@ class test_Scheduler:
         scheduler = mScheduler(app=self.app)
         scheduler.add(name='test_pending_tick',
                       schedule=always_pending)
-        assert 0 < scheduler.tick() <= 1 - 0.010
+        # The remaining interval can land a few clock-quantization steps above
+        # the 10 ms margin on some platforms (e.g. Windows/CPython 3.11 yields
+        # 0.9900000095367432 here), so leave a small tolerance instead of
+        # comparing the float boundary exactly.
+        assert 0 < scheduler.tick() <= 1 - 0.010 + 1e-6
 
     def test_pending_left_10_milliseconds_tick(self):
         scheduler = mScheduler(app=self.app)
@@ -469,7 +473,8 @@ class test_Scheduler:
         s = {'test_ticks%s' % i: {'schedule': mocked_schedule(False, j)}
              for i, j in enumerate(nums)}
         scheduler.update_from_dict(s)
-        assert 0 < scheduler.tick() <= min(nums) - 0.010
+        # Same float-boundary tolerance as test_pending_tick above.
+        assert 0 < scheduler.tick() <= min(nums) - 0.010 + 1e-6
 
     def test_ticks_microseconds(self):
         scheduler = mScheduler(app=self.app)
